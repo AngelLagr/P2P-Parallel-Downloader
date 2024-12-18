@@ -1,1 +1,7 @@
+<<<<<<< HEAD
 premierdeuxieme
+=======
+deuxieme
+premier
+
+>>>>>>> f0801210ce354d93ac003a177a4b456a590f28ca
