@@ -2,6 +2,7 @@ package Client;
 
 import Diary.DiaryRemote;
 
+import java.rmi.RemoteException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -71,7 +72,7 @@ public class Client implements Runnable,Serializable {
 
     public void run() {
         try (Scanner scanner = new Scanner(System.in)) {
-            System.out.println("Client démarré. Entrez une commande (getAnnuaire, getFichier <nom>, exit) :");
+            System.out.println("Client démarré. Entrez une commande (getAnnuaire, getFichier <nom>, addFichier <nom>, exit) :");
 
             while (true) {
                 System.out.print("> ");
@@ -83,33 +84,10 @@ public class Client implements Runnable,Serializable {
                 } else if (command.equals("getAnnuaire")) {
                     showAnnuaire();
                 } else if (command.startsWith("getFichier ")) { //getfichier test.txt
-                    String fileName = command.substring(11).trim();
-                    
-                    // Créer une connexion avec le serveur
-                    try (Socket socket = new Socket("localhost", 8080 );
-                        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-
-                        // Envoyer la requête GET au serveur
-                        out.println("GET " + fileName);
-
-                        // Lire la réponse du serveur (le fichier reconstruit)
-                        StringBuilder completeFile = new StringBuilder();
-                        String line;
-                        while ((line = in.readLine()) != null) {
-                            completeFile.append(line);
-                        }
-                        // Créer un fichier local et y écrire le contenu téléchargé
-                        File newFile = new File("./downloads/" + fileName);
-                        try (PrintWriter writer = new PrintWriter(newFile)) {
-                            writer.write(completeFile.toString());
-                            System.out.println("Fichier téléchargé et enregistré sous : " + newFile.getAbsolutePath());
-                        } catch (Exception e) {
-                            System.out.println("Erreur lors de l'enregistrement du fichier : " + e.getMessage());
-                        }
-                    } catch (IOException e) {
-                        System.out.println("Erreur de connexion ou de téléchargement : " + e.getClass() +e.getMessage());
-                    }
+                    getFichier(command);
+                } else if (command.startsWith("addFichier")) {
+                    String filePath = command.substring(11).trim();
+                    addFichier(filePath);
                 } else {
                     System.out.println("Commande non reconnue.");
                 }
@@ -129,6 +107,47 @@ public class Client implements Runnable,Serializable {
         } catch (Exception e) {
             System.out.println("Erreur lors de la récupération de l'annuaire : " + e.getMessage());
         }
+    }
+
+    private void getFichier(String command) {
+        String fileName = command.substring(11).trim();
+                    
+        // Créer une connexion avec le serveur
+        try (Socket socket = new Socket("localhost", 8080 );
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+            // Envoyer la requête GET au serveur
+            out.println("GET " + fileName);
+
+            // Lire la réponse du serveur (le fichier reconstruit)
+            StringBuilder completeFile = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                completeFile.append(line + "\n");
+            }
+            // Créer un fichier local et y écrire le contenu téléchargé
+            File newFile = new File("./downloads/" + fileName);
+            try (PrintWriter writer = new PrintWriter(newFile)) {
+                writer.write(completeFile.toString());
+                System.out.println("Fichier téléchargé et enregistré sous : " + newFile.getAbsolutePath());
+            } catch (Exception e) {
+                System.out.println("Erreur lors de l'enregistrement du fichier : " + e.getMessage());
+            }
+        } catch (IOException e) {
+            System.out.println("Erreur de connexion ou de téléchargement : " + e.getClass() +e.getMessage());
+        }
+    }
+
+    private void addFichier(String filePath) {
+        try {
+            File file = new File(filePath);
+            // Il faut check qu'il y a bien un fichier a cette adresse.
+            this.diary.addFiles(file, this);
+        } catch (RemoteException e) {
+            System.out.println("Remote Exception" + e.getMessage());
+        }
+        
     }
 }
 
