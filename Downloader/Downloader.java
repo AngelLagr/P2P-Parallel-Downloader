@@ -107,12 +107,16 @@ public class Downloader implements Runnable {
         // Récupérer les parties du fichier depuis chaque daemon
         Map<Client, String> fileParts = new HashMap<>();
         int startIndex = 0;
+        List<Slave> slaves = new ArrayList<Slave>();
         for (int i = 0; i < clients_related.size(); i++) {
-            Client client = clients_related.get(i);
-            int partitionSize = partitions.get(i);
-            String filePart = fetchFilePartFromDaemon(client, file_name, startIndex, startIndex + partitionSize);
-            fileParts.put(client, filePart);
-            startIndex += partitionSize;
+            Slave slave = new Slave(clients_related.get(i), partitions.get(i), startIndex, file_name,fileParts, this);
+            slave.start();
+
+            slaves.add(slave);
+            startIndex += partitions.get(i);
+        }
+        for (int i = 0; i < clients_related.size(); i++) {
+            slaves.get(i).join();
         }
 
         // Reconstruire le contenu du fichier à partir des parties
@@ -124,7 +128,7 @@ public class Downloader implements Runnable {
     }
 
 
-	private String fetchFilePartFromDaemon(Client client, String fileName, int start, int end) throws IOException {
+	public String fetchFilePartFromDaemon(Client client, String fileName, int start, int end) throws IOException {
         System.out.println("Attempting to connect to daemon on port: " + client.getDeamon().getPort());
         try (Socket daemonSocket = new Socket("localhost", client.getDeamon().getPort())) {
             InputStream daemonIn = daemonSocket.getInputStream();
@@ -151,3 +155,30 @@ public class Downloader implements Runnable {
     }
 }
 
+class Slave extends Thread {
+    Client client;
+    int partitionSize;
+    int startIndex;
+    String file_name;
+    Map<Client, String> fileParts;
+    Downloader downloader;
+
+    public Slave (Client client, int partitionSize, int startIndex, String file_name, Map<Client, String> fileParts, Downloader downloader) {
+        this.client =client;
+        this.partitionSize = partitionSize;
+        this.startIndex = startIndex;
+        this.file_name = file_name;
+        this.fileParts = fileParts;
+        this.downloader = downloader;
+    }
+
+    public void run() {
+        try {
+            String filePart = downloader.fetchFilePartFromDaemon(this.client, file_name, startIndex, startIndex + this.partitionSize);
+            this.fileParts.put(client, filePart);
+        } catch (Exception e) {
+            System.out.println("Erreur lors de la recuperation du fichier du client " + client);
+        }
+    }
+
+}
