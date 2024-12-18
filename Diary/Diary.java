@@ -88,8 +88,6 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
 
     public int countLines(String fileName) throws FileNotFoundException{
         int lineCount = 0;
-        System.out.println(lineCount)   ;
-        System.out.println(fileName)   ;
 
         File file = getFileFromName(fileName);
         if (file == null) {throw new FileNotFoundException();}
@@ -102,7 +100,6 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println(lineCount)   ; 
         return lineCount;
     }
 }

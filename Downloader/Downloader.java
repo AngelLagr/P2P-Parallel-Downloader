@@ -56,7 +56,6 @@ public class Downloader implements Runnable {
 
                 // Connecter au service RMI pour récupérer des informations sur le fichier
                 String reconstructedContent = getReconstructedFileContent(file_name);
-                System.out.print(reconstructedContent);
                 // Send the reconstructed content back to the original requester
                 out.println(reconstructedContent);
             } else {
