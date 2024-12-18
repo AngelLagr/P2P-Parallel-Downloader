@@ -97,7 +97,7 @@ public class Client implements Runnable,Serializable {
                         StringBuilder completeFile = new StringBuilder();
                         String line;
                         while ((line = in.readLine()) != null) {
-                            completeFile.append(line);
+                            completeFile.append(line +"\n");
                         }
                         // Créer un fichier local et y écrire le contenu téléchargé
                         File newFile = new File("./downloads/" + fileName);
