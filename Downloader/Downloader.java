@@ -110,6 +110,7 @@ public class Downloader implements Runnable {
         List<Slave> slaves = new ArrayList<Slave>();
         for (int i = 0; i < clients_related.size(); i++) {
             Slave slave = new Slave(clients_related.get(i), partitions.get(i), startIndex, file_name,fileParts, this);
+            fileParts.put(clients_related.get(i), null);
             slave.start();
 
             slaves.add(slave);
@@ -175,7 +176,7 @@ class Slave extends Thread {
     public void run() {
         try {
             String filePart = downloader.fetchFilePartFromDaemon(this.client, file_name, startIndex, startIndex + this.partitionSize);
-            this.fileParts.put(client, filePart);
+            this.fileParts.compute(client, (key, existingValue) -> filePart);
         } catch (Exception e) {
             System.out.println("Erreur lors de la recuperation du fichier du client " + client);
         }
