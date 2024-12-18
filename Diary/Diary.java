@@ -95,7 +95,6 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
             String line;
             while ((line = br.readLine()) != null) {
                 lineCount++;
-                System.out.println("Ligne lue: " + line);
             }
         } catch (Exception e) {
             e.printStackTrace();

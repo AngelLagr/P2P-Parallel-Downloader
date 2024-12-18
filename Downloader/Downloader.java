@@ -119,7 +119,7 @@ public class Downloader implements Runnable {
         for (int i = 0; i < clients_related.size(); i++) {
             slaves.get(i).join();
         }
-
+        System.out.println(fileParts);
         // Reconstruire le contenu du fichier à partir des parties
         return fileParts.values().stream().collect(Collectors.joining());
 
