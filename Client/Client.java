@@ -72,7 +72,7 @@ public class Client implements Runnable,Serializable {
 
     public void run() {
         try (Scanner scanner = new Scanner(System.in)) {
-            System.out.println("Client démarré. Entrez une commande (getAnnuaire, getFichier <nom>, addFichier <nom>, exit) :");
+            System.out.println("Client démarré. Entrez une commande (getAnnuaire, getFichier <nom>, addFichier <nom>, addDossier <nom>, exit) :");
 
             while (true) {
                 System.out.print("> ");
@@ -88,6 +88,9 @@ public class Client implements Runnable,Serializable {
                 } else if (command.startsWith("addFichier")) {
                     String filePath = command.substring(11).trim();
                     addFichier(filePath);
+                } else if (command.startsWith("addDossier")) {
+                    String filePath = command.substring(11).trim();
+                    addDossier(filePath);
                 } else {
                     System.out.println("Commande non reconnue.");
                 }
@@ -139,14 +142,23 @@ public class Client implements Runnable,Serializable {
         }
     }
 
+    // Cette methode permet au client de notifier qu'il possède un fichier
     private void addFichier(String filePath) {
         try {
             File file = new File(filePath);
-            // Il faut check qu'il y a bien un fichier a cette adresse.
-            this.diary.addFiles(file, this);
+            if (file.exists()) {
+                this.diary.addFiles(file, this);
+                this.deamon.files.add(file);
+            } else {
+                System.out.println("Il n'y a pas de fichier à l'adresse : " + filePath);
+            }  
         } catch (RemoteException e) {
             System.out.println("Remote Exception" + e.getMessage());
         }
+        
+    }
+
+    private void addDossier(String filePath) {
         
     }
 }

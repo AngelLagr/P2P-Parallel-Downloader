@@ -137,13 +137,13 @@ public class Downloader implements Runnable {
             String request = fileName + "," + start + "," + end;
             daemonOut.write(request.getBytes());
             daemonOut.flush();
-
             // Read the response from the daemon 
             BufferedReader reader = new BufferedReader(new InputStreamReader(daemonIn));
             StringBuilder filePart = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
                 filePart.append(line).append("\n");
+                System.out.println(line);
             }
             return filePart.toString();
 

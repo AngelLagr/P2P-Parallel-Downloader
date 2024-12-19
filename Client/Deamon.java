@@ -64,6 +64,12 @@ public class Deamon implements Serializable {
             }
         }).start();
     }
+
+    // Cette méthode ajoute un file au Daemon
+    private void addFile(File file) {
+        this.files.add(file);
+        
+    }
 }
 
 class Slave extends Thread {
@@ -90,7 +96,6 @@ class Slave extends Thread {
             String fileName = parts[0];
             int start = Integer.parseInt(parts[1]);
             int end = Integer.parseInt(parts[2]);
-
             // Lire la partie demandée du fichier
             String filePath = this.deamon.files.stream()
                               .filter(file -> file.getName().equals(fileName))
