@@ -10,15 +10,16 @@ import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
+import java.util.ArrayList;
 
 public class Deamon implements Serializable {
     Client client;
     List<File> files;
     int port;
 
-    public Deamon(Client client, List<File> files) {
+    public Deamon(Client client) {
         this.client = client;
-        this.files = files;
+        this.files = new ArrayList<File>();
         this.port = 8080 + client.getId();
         startClientServer();
     }

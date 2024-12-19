@@ -17,7 +17,6 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
     }
 
     @Override
-    // quels client sont associés a ce fichier
     public List<Client> getClient(String file_name) {
         for (Map.Entry<File, List<Client>> entry : files.entrySet()) {
             if (entry.getKey().getName().equals(file_name)) {
@@ -31,7 +30,6 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
         return new ArrayList<File>(files.keySet());
     }
     @Override
-    // quels fichiers sont associés a ce client
     public List<File> getFiles(Client client) throws RemoteException{
         List<File> clientFiles = new ArrayList<File>();
         for (Map.Entry<File, List<Client>> entry : files.entrySet()) {

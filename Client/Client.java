@@ -20,17 +20,13 @@ public class Client implements Runnable,Serializable {
     private DiaryRemote diary; // Référence RMI vers le Diary
     private Deamon deamon;
 
-    public Client(int id, List<File> files) {
+    public Client(int id) {
         this.id = id;
         try {
-            this.deamon = new Deamon(this, files);
+            this.deamon = new Deamon(this);
+
             // Connexion au Diary via RMI
             this.diary = (DiaryRemote) Naming.lookup("localhost/DiaryService");
-
-            // Ajouter les fichiers du client au Diary
-            for (File file : files) {
-                diary.addFiles(file, this); // Enregistrer chaque fichier du client dans le Diary
-            }
 
         } catch (Exception e) {
             System.out.println("Erreur lors de la connexion au Diary : " + e.getMessage());
@@ -39,25 +35,14 @@ public class Client implements Runnable,Serializable {
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.out.println("Usage: java Client <id> <fichier1> <fichier2> ...");
+            System.out.println("Usage: java Client <id>");
             System.exit(1);
         }
 
         int id = Integer.parseInt(args[0]);
-        List<File> files = new ArrayList<>();
-
-        // Ajouter les fichiers fournis en argument
-        for (int i = 1; i < args.length; i++) {
-            File file = new File(args[i]);
-            if (file.exists()) {
-                files.add(file);
-            } else {
-                System.out.println("Le fichier " + args[i] + " n'existe pas.");
-            }
-        }
 
         // Lancer le client avec l'id et les fichiers
-        Client client = new Client(id, files);
+        Client client = new Client(id);
         new Thread(client).start();
     }
 
@@ -159,7 +144,24 @@ public class Client implements Runnable,Serializable {
     }
 
     private void addDossier(String filePath) {
-        
+        File dossier = new File(filePath);
+        if (!dossier.exists()) {
+            System.out.println("Il n'y a pas de dossier ou de fichier à l'adresse : " + filePath);
+        }
+        if (dossier.isDirectory()) {
+            File[] fichiers = dossier.listFiles();
+            if (fichiers != null) {
+                for (File fichier : fichiers) {
+                    if (!fichier.isDirectory()) {
+                        addFichier(fichier.getAbsolutePath());
+                    } else {
+                        addDossier(fichier.getAbsolutePath());
+                    }
+                }
+            }
+        } else {
+            System.out.println("Le chemin spécifié n'est pas un dossier valide.");
+        }
     }
 }
 
