@@ -91,9 +91,14 @@ public class Downloader implements Runnable {
         List<Client> clients_related = diary.getClient(file_name);
 
         int nb_clients = clients_related.size();
-
-        int file_size = diary.getSize(file_name);
-
+        if (nb_clients == 0) {
+            throw new Exception("Aucun client ne possède ce fichier");
+        }
+        int file_size = -2;
+        Slave2 slave2 = new Slave2(clients_related.get(0), file_name, file_size, this, 0);
+        slave2.start();
+        slave2.join();
+        file_size = slave2.getFileSize(); 
         if (file_size == -1){
             throw new Exception("Fichier non trouvé");
         } else if (file_size == -2) {
@@ -134,7 +139,7 @@ public class Downloader implements Runnable {
             OutputStream daemonOut = daemonSocket.getOutputStream();
 
             // Send the request to the daemon
-            String request = fileName + "," + start + "," + end;
+            String request = "GetFilePart " + fileName + "," + start + "," + end;
             daemonOut.write(request.getBytes());
             daemonOut.flush();
             // Read the response from the daemon 
@@ -143,7 +148,6 @@ public class Downloader implements Runnable {
             String line;
             while ((line = reader.readLine()) != null) {
                 filePart.append(line).append("\n");
-                System.out.println(line);
             }
             return filePart.toString();
 
@@ -152,6 +156,38 @@ public class Downloader implements Runnable {
             return "";
         }
     }
+
+    public Integer fetchFileSizeFromDaemon(Client client, String fileName) throws IOException {
+        System.out.println("Attempting to connect to daemon on port: " + client.getDeamon().getPort());
+
+        try (Socket daemonSocket = new Socket("localhost", client.getDeamon().getPort());
+            InputStream daemonIn = daemonSocket.getInputStream();
+            OutputStream daemonOut = daemonSocket.getOutputStream()) {
+
+            // Envoi de la requête au daemon
+            String request = "getFileSize " + fileName;
+            daemonOut.write(request.getBytes());
+            daemonOut.flush();
+
+            // Lecture de la réponse
+            BufferedReader reader = new BufferedReader(new InputStreamReader(daemonIn));
+            String response = reader.readLine();
+            if (response == null || response.isEmpty()) {
+                throw new IOException("Empty response from daemon.");
+            }
+
+            // Conversion de la réponse en entier
+            try {
+                return Integer.parseInt(response.trim());
+            } catch (NumberFormatException e) {
+                throw new IOException("Invalid response format: " + response, e);
+            }
+
+        } catch (IOException e) {
+            System.err.println("Error communicating with daemon: " + e.getMessage());
+            return -3;
+        }
+}
 }
 
 class Slave extends Thread {
@@ -180,6 +216,35 @@ class Slave extends Thread {
         } catch (Exception e) {
             System.out.println("Erreur lors de la recuperation du fichier du client " + client);
         }
+    }
+
+}
+
+class Slave2 extends Thread {
+    Client client;
+    String file_name;
+    Downloader downloader;
+    Integer index_client;
+    Integer file_size; 
+
+    public Slave2 (Client client, String file_name, Integer file_size, Downloader downloader, Integer index_client) {
+        this.client =client;
+        this.file_name = file_name;
+        this.file_size = file_size;
+        this.downloader = downloader;
+        this.index_client = index_client;
+    }
+
+    public void run() {
+        try {
+            this.file_size = this.downloader.fetchFileSizeFromDaemon(this.client, file_name);
+        } catch (Exception e) {
+            System.out.println("Erreur lors de la recuperation du fichier du client " + client);
+        }
+    }
+
+    public Integer getFileSize() {
+        return this.file_size;
     }
 
 }

@@ -3,23 +3,24 @@ package Client;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 public class Deamon implements Serializable {
     Client client;
-    List<File> files;
+    Map<String, File> files;
     int port;
 
     public Deamon(Client client) {
         this.client = client;
-        this.files = new ArrayList<File>();
+        this.files = new HashMap<String, File>();
         this.port = 8080 + client.getId();
         startClientServer();
     }
@@ -67,9 +68,37 @@ public class Deamon implements Serializable {
     }
 
     // Cette méthode ajoute un file au Daemon
-    private void addFile(File file) {
-        this.files.add(file);
-        
+    public void addFile(File file) {
+        this.files.put(file.getName(), file);
+    }
+
+    public int getSize(String file_name){
+        for (Map.Entry<String, File> entry : this.files.entrySet()) {
+            if (entry.getKey().equals(file_name)) {
+                try {
+                    return countLines(entry.getValue());
+                } catch (FileNotFoundException e) {
+                    return -1;
+                }
+
+            }
+        }
+        return -2;
+    }
+
+    public int countLines(File file) throws FileNotFoundException{
+        int lineCount = 0;
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                lineCount++;
+                System.out.println("Ligne lue: " + line);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return lineCount;
     }
 }
 
@@ -92,26 +121,39 @@ class Slave extends Thread {
             int bytesRead = s1_in.read(requestBuffer);
             String request = new String(requestBuffer, 0, bytesRead);
 
-            // La requête contient : "filename,start,end"
-            String[] parts = request.split(",");
-            String fileName = parts[0];
-            int start = Integer.parseInt(parts[1]);
-            int end = Integer.parseInt(parts[2]);
-            // Lire la partie demandée du fichier
-            String filePath = this.deamon.files.stream()
-                              .filter(file -> file.getName().equals(fileName))
-                              .findFirst()
-                              .orElseThrow(() -> new IOException("File not found"))
-                              .getAbsolutePath();
-            String filePart = this.deamon.getFilePart(filePath, start, end);
+            if (request.startsWith("GetFilePart")) {
+                request = request.substring(12).trim();
+                // La requête contient : "filename,start,end"
+                String[] parts = request.split(",");
+                String fileName = parts[0];
+                int start = Integer.parseInt(parts[1]);
+                int end = Integer.parseInt(parts[2]);
+                // Lire la partie demandée du fichier
+                String filePath = this.deamon.files.entrySet().stream()
+                                .filter(file -> file.getKey().equals(fileName))
+                                .findFirst()
+                                .orElseThrow(() -> new IOException("File not found"))
+                                .getValue().getAbsolutePath();
+                String filePart = this.deamon.getFilePart(filePath, start, end);
 
-            // Envoyer la réponse au downloader
-            s1_out.write(filePart.getBytes());
-            s1_out.flush();
+                // Envoyer la réponse au downloader
+                s1_out.write(filePart.getBytes());
+                s1_out.flush();
 
-            // Fermer la connexion
-            s1.close();
+                // Fermer la connexion
+                s1.close();
+            } else if (request.startsWith("getFileSize")) {
+                String fileName = request.substring(12).trim();
+                Integer size = this.deamon.getSize(fileName);
+                // Envoyer la réponse au downloader
+                String sizeString = String.valueOf(size); // Conversion en chaîne
+                s1_out.write(sizeString.getBytes());
+                s1_out.flush();
 
+                // Fermer la connexion
+                s1.close();
+            }
+            
         } catch (IOException e) {
             System.out.println(e);
         }

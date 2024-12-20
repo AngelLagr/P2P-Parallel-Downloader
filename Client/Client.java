@@ -48,16 +48,16 @@ public class Client implements Runnable,Serializable {
 
 
     public Deamon getDeamon(){
-        return deamon;
+        return this.deamon;
     } 
 
     public int getId() {
-        return id;
+        return this.id;
     }
 
     public void run() {
         try (Scanner scanner = new Scanner(System.in)) {
-            System.out.println("Client démarré. Entrez une commande (getAnnuaire, getFichier <nom>, addFichier <nom>, addDossier <nom>, exit) :");
+            System.out.println("Client démarré. Entrez une commande (getAnnuaire, getFichier <nom>, addFichier <chemin>, addDossier <chemin>, exit) :");
 
             while (true) {
                 System.out.print("> ");
@@ -89,8 +89,8 @@ public class Client implements Runnable,Serializable {
     private void showAnnuaire() {
         try {
             System.out.println("Fichiers disponibles dans le Diary :");
-            for (File file : diary.getAllFiles()) {
-                System.out.println("- " + file.getName() + " détenu par : "+ diary.getClient(file.getName()));
+            for (String file : diary.getAllFiles()) {
+                System.out.println("- " + file + " détenu par : "+ diary.getClient(file));
             }
         } catch (Exception e) {
             System.out.println("Erreur lors de la récupération de l'annuaire : " + e.getMessage());
@@ -132,10 +132,10 @@ public class Client implements Runnable,Serializable {
         try {
             File file = new File(filePath);
             if (file.exists()) {
-                this.diary.addFiles(file, this);
-                this.deamon.files.add(file);
+                this.diary.addFiles(file.getName(), this);
+                this.deamon.addFile(file);
             } else {
-                System.out.println("Il n'y a pas de fichier à l'adresse : " + filePath);
+                System.out.println("Il n'y a pas de fichier au chemin : " + filePath);
             }  
         } catch (RemoteException e) {
             System.out.println("Remote Exception" + e.getMessage());
@@ -146,7 +146,7 @@ public class Client implements Runnable,Serializable {
     private void addDossier(String filePath) {
         File dossier = new File(filePath);
         if (!dossier.exists()) {
-            System.out.println("Il n'y a pas de dossier ou de fichier à l'adresse : " + filePath);
+            System.out.println("Il n'y a pas de dossier ou de fichier au chemin : " + filePath);
         }
         if (dossier.isDirectory()) {
             File[] fichiers = dossier.listFiles();
@@ -162,6 +162,10 @@ public class Client implements Runnable,Serializable {
         } else {
             System.out.println("Le chemin spécifié n'est pas un dossier valide.");
         }
+    }
+
+    public void print(String texte) {
+        System.out.println(texte);
     }
 }
 
