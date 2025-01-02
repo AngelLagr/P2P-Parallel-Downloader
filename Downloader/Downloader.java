@@ -88,7 +88,7 @@ public class Downloader implements Runnable {
     try {
         // Connecter au service RMI pour récupérer des informations sur le fichier
         DiaryRemote diary = (DiaryRemote) Naming.lookup("localhost/DiaryService");
-        List<Client> clients_related = diary.getClient(file_name);
+        List<Integer> clients_related = diary.getClient(file_name);
 
         int nb_clients = clients_related.size();
         if (nb_clients == 0) {
@@ -132,9 +132,9 @@ public class Downloader implements Runnable {
     }
 
 
-	public String fetchFilePartFromDaemon(Client client, String fileName, int start, int end) throws IOException {
-        System.out.println("Attempting to connect to daemon on port: " + client.getDeamon().getPort());
-        try (Socket daemonSocket = new Socket("localhost", client.getDeamon().getPort())) {
+	public String fetchFilePartFromDaemon(Integer client, String fileName, int start, int end) throws IOException {
+        System.out.println("Attempting to connect to daemon on port: " + client);
+        try (Socket daemonSocket = new Socket("localhost", client)) {
             InputStream daemonIn = daemonSocket.getInputStream();
             OutputStream daemonOut = daemonSocket.getOutputStream();
 
@@ -157,10 +157,10 @@ public class Downloader implements Runnable {
         }
     }
 
-    public Integer fetchFileSizeFromDaemon(Client client, String fileName) throws IOException {
-        System.out.println("Attempting to connect to daemon on port: " + client.getDeamon().getPort());
+    public Integer fetchFileSizeFromDaemon(Integer client, String fileName) throws IOException {
+        System.out.println("Attempting to connect to daemon on port: " + client);
 
-        try (Socket daemonSocket = new Socket("localhost", client.getDeamon().getPort());
+        try (Socket daemonSocket = new Socket("localhost", client);
             InputStream daemonIn = daemonSocket.getInputStream();
             OutputStream daemonOut = daemonSocket.getOutputStream()) {
 
@@ -191,7 +191,7 @@ public class Downloader implements Runnable {
 }
 
 class Slave extends Thread {
-    Client client;
+    Integer client;
     int partitionSize;
     int startIndex;
     String file_name;
@@ -199,7 +199,7 @@ class Slave extends Thread {
     Downloader downloader;
     Integer index_client;
 
-    public Slave (Client client, int partitionSize, int startIndex, String file_name, List<String> fileParts, Downloader downloader, Integer index_client) {
+    public Slave (Integer client, int partitionSize, int startIndex, String file_name, List<String> fileParts, Downloader downloader, Integer index_client) {
         this.client =client;
         this.partitionSize = partitionSize;
         this.startIndex = startIndex;
@@ -221,13 +221,13 @@ class Slave extends Thread {
 }
 
 class Slave2 extends Thread {
-    Client client;
+    Integer client;
     String file_name;
     Downloader downloader;
     Integer index_client;
     Integer file_size; 
 
-    public Slave2 (Client client, String file_name, Integer file_size, Downloader downloader, Integer index_client) {
+    public Slave2 (Integer client, String file_name, Integer file_size, Downloader downloader, Integer index_client) {
         this.client =client;
         this.file_name = file_name;
         this.file_size = file_size;
@@ -239,7 +239,7 @@ class Slave2 extends Thread {
         try {
             this.file_size = this.downloader.fetchFileSizeFromDaemon(this.client, file_name);
         } catch (Exception e) {
-            System.out.println("Erreur lors de la recuperation du fichier du client " + client);
+            System.out.println("Erreur lors de la recuperation du fichier du client " + this.client);
         }
     }
 

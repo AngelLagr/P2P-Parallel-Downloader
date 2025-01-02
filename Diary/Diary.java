@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Diary extends UnicastRemoteObject implements DiaryRemote {
-    Map<String,List<Client>> files;
+    Map<String,List<Integer>> files;
 
     public Diary() throws RemoteException {
         super();
@@ -17,22 +17,22 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
     }
 
     @Override
-    public List<Client> getClient(String file_name) {
-        for (Map.Entry<String, List<Client>> entry : files.entrySet()) {
+    public List<Integer> getClient(String file_name) {
+        for (Map.Entry<String, List<Integer>> entry : files.entrySet()) {
             if (entry.getKey().equals(file_name)) {
                 return entry.getValue();
             }
         }
-        return new ArrayList<Client>(); // Si vide
+        return new ArrayList<Integer>(); // Si vide
     }
 
     public List<String> getAllFiles() throws RemoteException{
         return new ArrayList<String>(files.keySet());
     }
     @Override
-    public List<String> getFiles(Client client) throws RemoteException{
+    public List<String> getFiles(Integer client) throws RemoteException{
         List<String> clientFiles = new ArrayList<String>();
-        for (Map.Entry<String, List<Client>> entry : files.entrySet()) {
+        for (Map.Entry<String, List<Integer>> entry : files.entrySet()) {
             if (entry.getValue().contains(client)) {
                 clientFiles.add(entry.getKey());
             }
@@ -41,12 +41,12 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
     }
     
     @Override 
-    public void addFiles(String fileName, Client client) {
+    public void addFiles(String fileName, Integer client) {
         if (files.containsKey(fileName)) {
             files.get(fileName).add(client);
         }
         else {
-            List<Client> clients = new ArrayList<Client>();
+            List<Integer> clients = new ArrayList<Integer>();
             clients.add(client);
             files.put(fileName, clients);
         }

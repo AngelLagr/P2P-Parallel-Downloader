@@ -132,7 +132,7 @@ public class Client implements Runnable,Serializable {
         try {
             File file = new File(filePath);
             if (file.exists()) {
-                this.diary.addFiles(file.getName(), this);
+                this.diary.addFiles(file.getName(), this.deamon.getPort());
                 this.deamon.addFile(file);
             } else {
                 System.out.println("Il n'y a pas de fichier au chemin : " + filePath);
