@@ -43,10 +43,11 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
     @Override 
     public void addFiles(String fileName, Integer client, Long fileSize) throws RemoteException{
         if (files.containsKey(fileName)) {
-            files.get(fileName).add(client);
+            if (!files.get(fileName).contains(client)){
+                files.get(fileName).add(client);
+            } 
             files_sizes.put(fileName, fileSize);
-        }
-        else {
+        } else {
             List<Integer> clients = new ArrayList<Integer>();
             clients.add(client);
             files.put(fileName, clients);
