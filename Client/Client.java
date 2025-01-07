@@ -11,8 +11,6 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.Socket;
 import java.rmi.Naming;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 public class Client implements Runnable,Serializable {
@@ -69,7 +67,11 @@ public class Client implements Runnable,Serializable {
                 } else if (command.equals("getAnnuaire")) {
                     showAnnuaire();
                 } else if (command.startsWith("getFichier ")) { //getfichier test.txt
+                    long startTime = System.currentTimeMillis();
+
                     getFichier(command);
+                    long endTime = System.currentTimeMillis();
+                    System.out.println("\nDurée du téléchargement : " + (endTime-startTime)*1000 +"s");
                 } else if (command.startsWith("addFichier")) {
                     String filePath = command.substring(11).trim();
                     addFichier(filePath);

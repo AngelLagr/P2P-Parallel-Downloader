@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import Client.Client;
 import Diary.DiaryRemote;
 
 public class Downloader implements Runnable {

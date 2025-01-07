@@ -1,6 +1,4 @@
 package Diary;
-import Client.Client;
-import java.io.*;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -55,7 +53,5 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
     @Override
     public void removeFiles(String name_file) {
         files.entrySet().removeIf(entry -> entry.getKey().equals(name_file));
-    }
-
-    
+    }    
 }
