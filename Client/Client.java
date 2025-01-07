@@ -1,30 +1,30 @@
 package Client;
 
 import Diary.DiaryRemote;
+import Downloader.Downloader;
 
 import java.rmi.RemoteException;
-import java.io.BufferedReader;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.net.Socket;
-import java.rmi.Naming;
 import java.util.Scanner;
 
 public class Client implements Runnable,Serializable {
     private int id;
     private DiaryRemote diary; // Référence RMI vers le Diary
     private Deamon deamon;
+    private Downloader downloader;
 
     public Client(int id) {
         this.id = id;
         try {
             this.deamon = new Deamon(this);
-
+            this.downloader = new Downloader(this);
             // Connexion au Diary via RMI
-            this.diary = (DiaryRemote) Naming.lookup("localhost/DiaryService");
+            Registry reg = LocateRegistry.getRegistry("localhost",1099);
+            this.diary = (DiaryRemote) reg.lookup("DiaryService");
 
         } catch (Exception e) {
             System.out.println("Erreur lors de la connexion au Diary : " + e.getMessage());
@@ -71,7 +71,7 @@ public class Client implements Runnable,Serializable {
 
                     getFichier(command);
                     long endTime = System.currentTimeMillis();
-                    System.out.println("\nDurée du téléchargement : " + (endTime-startTime)*1000 +"s");
+                    System.out.println("\nDurée du téléchargement : " + (endTime-startTime) +"ms");
                 } else if (command.startsWith("addFichier")) {
                     String filePath = command.substring(11).trim();
                     addFichier(filePath);
@@ -100,32 +100,23 @@ public class Client implements Runnable,Serializable {
     }
 
     private void getFichier(String command) {
-        String fileName = command.substring(11).trim();
-                    
-        // Créer une connexion avec le serveur
-        try (Socket socket = new Socket("localhost", 8080 );
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+        String file_name = command.substring(11).trim();
 
-            // Envoyer la requête GET au serveur
-            out.println("GET " + fileName);
+        String completeFile;
+        try {
+            completeFile = downloader.download(file_name);
 
-            // Lire la réponse du serveur (le fichier reconstruit)
-            StringBuilder completeFile = new StringBuilder();
-            String line;
-            while ((line = in.readLine()) != null) {
-                completeFile.append(line + "\n");
-            }
             // Créer un fichier local et y écrire le contenu téléchargé
-            File newFile = new File("./downloads/" + fileName);
+            File newFile = new File("./downloads/" + file_name);
             try (PrintWriter writer = new PrintWriter(newFile)) {
-                writer.write(completeFile.toString());
+                writer.write(completeFile);
                 System.out.println("Fichier téléchargé et enregistré sous : " + newFile.getAbsolutePath());
             } catch (Exception e) {
                 System.out.println("Erreur lors de l'enregistrement du fichier : " + e.getMessage());
             }
-        } catch (IOException e) {
-            System.out.println("Erreur de connexion ou de téléchargement : " + e.getClass() +e.getMessage());
+
+        } catch (Exception e){
+            System.out.println("Erreur de connexion lors du téléchargement : " + e.getMessage());
         }
     }
 

@@ -5,65 +5,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintStream;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import Client.Client;
 import Diary.DiaryRemote;
 
-public class Downloader implements Runnable {
-    Socket clientSocket;
+public class Downloader {
+    private Client client;
 
     // Constructeur qui accepte le Socket
-    public Downloader(Socket clientSocket) {
-        this.clientSocket = clientSocket;
-    }
-
-	public static void main(String[] args) throws IOException {
-		try (ServerSocket serverSocket = new ServerSocket(8080)) {
-            System.out.println("Downloader Server is running on port 8080...");
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                // Crée un nouveau thread pour chaque client
-                new Thread(new Downloader(clientSocket)).start();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-	public void run() {
-        try (
-            InputStreamReader in = new InputStreamReader(clientSocket.getInputStream());
-            PrintStream out = new PrintStream(clientSocket.getOutputStream());
-        ) {
-            // Lecture de la requête envoyée par le client
-            BufferedReader reader = new BufferedReader(in);
-            String request = reader.readLine();
-            System.out.println("Request received: " + request);
-
-			// Exemple de demande : GET example.txt
-            if (request.startsWith("GET ")) {
-                String file_name = request.substring(4).trim();
-
-                // Connecter au service RMI pour récupérer des informations sur le fichier
-                String reconstructedContent = getReconstructedFileContent(file_name);
-                // Send the reconstructed content back to the original requester
-                out.println(reconstructedContent);
-            } else {
-                // Réponse 404 si le fichier n'existe pas
-                System.out.print("Erreur ! La commande est inconnue");
-            }
-            clientSocket.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } 
+    public Downloader(Client client) {
+        this.client = client;
     }
 
     private List<Integer> partition(int file_size,int nb_clients){
@@ -83,12 +41,13 @@ public class Downloader implements Runnable {
         return repartition;
     } 
 
-    public String getReconstructedFileContent(String file_name) throws RemoteException {
+    public String download(String file_name) throws RemoteException {
     try {
         // Connecter au service RMI pour récupérer des informations sur le fichier
-        DiaryRemote diary = (DiaryRemote) Naming.lookup("localhost/DiaryService");
-        List<Integer> clients_related = diary.getClient(file_name);
+        Registry reg = LocateRegistry.getRegistry("localhost",1099);
+        DiaryRemote diary = (DiaryRemote) reg.lookup("DiaryService");        
 
+        List<Integer> clients_related = diary.getClient(file_name);
         int nb_clients = clients_related.size();
         if (nb_clients == 0) {
             throw new Exception("Aucun client ne possède ce fichier");
@@ -97,7 +56,9 @@ public class Downloader implements Runnable {
         Slave2 slave2 = new Slave2(clients_related.get(0), file_name, file_size, this, 0);
         slave2.start();
         slave2.join();
+
         file_size = slave2.getFileSize(); 
+
         if (file_size == -1){
             throw new Exception("Fichier non trouvé");
         } else if (file_size == -2) {
@@ -110,6 +71,8 @@ public class Downloader implements Runnable {
         List<String> fileParts = new ArrayList<String>();
         int startIndex = 0;
         List<Slave> slaves = new ArrayList<Slave>();
+
+        long startTime = System.currentTimeMillis();
         for (int i = 0; i < clients_related.size(); i++) {
             Slave slave = new Slave(clients_related.get(i), partitions.get(i), startIndex, file_name,fileParts, this, i);
             fileParts.add(null);
@@ -121,7 +84,9 @@ public class Downloader implements Runnable {
         for (int i = 0; i < clients_related.size(); i++) {
             slaves.get(i).join();
         }
-        System.out.println(fileParts);
+        long endTime = System.currentTimeMillis();
+        System.out.println("\nDurée du téléchargement parrallèle : " + (endTime-startTime) +"ms");
+        
         // Reconstruire le contenu du fichier à partir des parties
         return fileParts.stream().collect(Collectors.joining());
 

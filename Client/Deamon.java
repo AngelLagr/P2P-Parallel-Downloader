@@ -80,7 +80,6 @@ public class Deamon implements Serializable {
                 } catch (FileNotFoundException e) {
                     return -1;
                 }
-
             }
         }
         return -2;
@@ -93,7 +92,6 @@ public class Deamon implements Serializable {
             String line;
             while ((line = br.readLine()) != null) {
                 lineCount++;
-                System.out.println("Ligne lue: " + line);
             }
         } catch (Exception e) {
             e.printStackTrace();
