@@ -44,7 +44,7 @@ public class Downloader {
     public byte[] download(String file_name) throws RemoteException {
         try {
             // Connecter au service RMI pour récupérer des informations sur le fichier
-            Registry reg = LocateRegistry.getRegistry("localhost",1099);
+            Registry reg = LocateRegistry.getRegistry(this.client.getDiaryIp(),1099);
             DiaryRemote diary = (DiaryRemote) reg.lookup("DiaryService");        
 
             List<ClientRepresentation> clients_related = diary.getClient(file_name);

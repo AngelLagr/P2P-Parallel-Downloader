@@ -1,5 +1,7 @@
 package Diary;
-public class ClientRepresentation{
+import java.io.Serializable;
+
+public class ClientRepresentation implements Serializable{
     private String adresse;
     private Integer port;
 
