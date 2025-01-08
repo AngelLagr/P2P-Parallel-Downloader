@@ -119,7 +119,7 @@ public class Client implements Runnable,Serializable {
                 System.out.println("- " + file + " de taille " + diary.getFileSizeDiary(file) + " détenu par : "+ diary.getClient(file));
             }
         } catch (Exception e) {
-            System.out.println("Erreur lors de la récupération de l'annuaire : " + e.getMessage());
+            System.out.println("Erreur lors de la récupération de l'annuaire : " + e.getClass());
         }
     }
 
@@ -136,10 +136,10 @@ public class Client implements Runnable,Serializable {
                 fileOutputStream.write(completeFile);
                 System.out.println("Fichier téléchargé et enregistré sous : " + newFile.getAbsolutePath());
             } catch (Exception e) {
-                System.out.println("Erreur lors de l'enregistrement du fichier : " + e.getMessage());
+                System.out.println("Erreur lors de l'enregistrement du fichier : " + e.getClass());
             }
         } catch (Exception e){
-            System.out.println("Erreur de connexion lors du téléchargement : " + e.getMessage());
+            System.out.println("Erreur de connexion lors du téléchargement : " + e.getClass());
         }
     }
 
@@ -152,13 +152,13 @@ public class Client implements Runnable,Serializable {
                     this.diary.addFiles(file.getName(), this.ip, this.deamon.getPort(), file.length());
                     this.deamon.addFile(file);
                 } catch(Exception e) {
-                    System.out.println("Erreur lors de la récupération du nombre de ligne d'une fichier avec le demon : " + e.getMessage());
+                    System.out.println("Erreur lors de la récupération du nombre de ligne d'une fichier avec le demon : " + e.getClass());
                 }
             } else {
                 System.out.println("Il n'y a pas de fichier au chemin : " + filePath);
             }  
         } catch (Exception e) {
-            System.out.println("Remote Exception" + e.getMessage());
+            System.out.println("Remote Exception" + e.getClass());
         }
         
     }
@@ -189,7 +189,7 @@ public class Client implements Runnable,Serializable {
             try { 
                 diary.addFiles(entry.getValue().getName(),this.getIp(),this.deamon.getPort(), entry.getValue().length());
             } catch (Exception e) {
-                System.out.println("Erreur dans le rechargement des fichiers" + e);
+                System.out.println("Erreur dans le rechargement des fichiers" + e.getClass());
             }
         }
     } 

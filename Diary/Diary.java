@@ -45,11 +45,13 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
     @Override 
     public void addFiles(String fileName, String IPClient, Integer port, Long fileSize) throws RemoteException{
         if (files.containsKey(fileName)) {
+            Boolean isInside = false;
             for (ClientRepresentation element : this.files.get(fileName)){
                 if (element.getAdresse() == IPClient && element.getPort() == port) {
-                    files.get(fileName).add(new ClientRepresentation(IPClient, port));
+                    isInside = true;
                 } 
             }
+            if (!(isInside)) {files.get(fileName).add(new ClientRepresentation(IPClient, port));}
             files_sizes.put(fileName, fileSize);
         } else {
             List<ClientRepresentation> clients = new ArrayList<ClientRepresentation>();

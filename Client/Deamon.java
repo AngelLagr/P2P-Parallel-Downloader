@@ -1,5 +1,6 @@
 package Client;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,6 +11,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.zip.GZIPOutputStream;
 
 public class Deamon implements Serializable {
     Client client;
@@ -34,8 +36,15 @@ public class Deamon implements Serializable {
             reader.seek(start);
             reader.readFully(result);
         }
-        return result;
+        // Compression des données lues
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream)) {
+            gzipOutputStream.write(result);
+        }
+        
+        return byteArrayOutputStream.toByteArray();  // Renvoie la version compressée des données
     }
+
 
     // Méthode pour démarrer l'écouteur du Client sur le port spécifique
     public void startClientServer() {
@@ -97,10 +106,34 @@ class Slave extends Thread {
                                 .findFirst()
                                 .orElseThrow(() -> new IOException("File not found"))
                                 .getValue().getAbsolutePath();
-                byte[] filePart = this.deamon.getFilePart(filePath, start, end);
+                byte[] compressedFilePart = this.deamon.getFilePart(filePath, start, end);
 
-                // Envoyer la réponse au downloader
-                s1_out.write(filePart);
+
+                
+                // Simuler un retard dans l'envoi des paquets///////////////(Decommenter pour activer)///////////////////////////////////////
+                // int delayMs = 1; // délai en millisecondes entre chaque paquet (ajustez selon vos besoins)
+
+                // // Pour envoyer les données par paquet, on peut les découper en morceaux plus petits
+                // int packetSize = 1024; // Taille des paquets, ajustez en fonction des besoins
+                // int totalLength = compressedFilePart.length;
+
+                // // Envoi par paquets avec délai simulé
+                // for (int i = 0; i < totalLength; i += packetSize) {
+                //     int length = Math.min(packetSize, totalLength - i);
+                //     byte[] packet = new byte[length];
+                //     System.arraycopy(compressedFilePart, i, packet, 0, length);
+
+                //     // Envoi du paquet
+                //     s1_out.write(packet);
+                //     s1_out.flush();
+
+                //     // Simuler un délai entre l'envoi de chaque paquet
+                //     try{Thread.sleep(delayMs);}catch (Exception e) {} // Pause pour simuler la lenteur de la connexion
+                // }
+                ///////////////////////////////////////////////////////////////////////////////////////////////////
+                
+                // Envoyer la réponse au downloader (a decommenter en cas de non simulation de lentaire)
+                s1_out.write(compressedFilePart);
                 s1_out.flush();
 
                 // Fermer la connexion

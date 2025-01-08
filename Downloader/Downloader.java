@@ -1,5 +1,6 @@
 package Downloader;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,6 +11,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 import Client.Client;
 import Diary.ClientRepresentation;
@@ -40,6 +42,22 @@ public class Downloader {
         }    
         return repartition;
     } 
+
+    // Méthode pour décompresser une partie compressée du fichier
+    public byte[] decompressFilePart(byte[] compressedPart) throws IOException {
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(compressedPart);
+        try (GZIPInputStream gzipInputStream = new GZIPInputStream(byteArrayInputStream);
+             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = gzipInputStream.read(buffer)) != -1) {
+                byteArrayOutputStream.write(buffer, 0, bytesRead);
+            }
+
+            return byteArrayOutputStream.toByteArray();
+        }
+    }
 
     public byte[] download(String file_name) throws RemoteException {
         try {
@@ -85,14 +103,16 @@ public class Downloader {
             long endTime = System.currentTimeMillis();
             System.out.println("\nDurée du téléchargement parrallèle : " + (endTime-startTime) +"ms");
             
-            // Reconstruire le contenu du fichier à partir des parties
+            // Décompresser chaque partie avant de les assembler
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            for (byte[] part : fileParts) {
-                byteArrayOutputStream.write(part);
+            for (byte[] compressedPart : fileParts) {
+                byte[] decompressedPart = decompressFilePart(compressedPart);
+                byteArrayOutputStream.write(decompressedPart);
             }
-            return byteArrayOutputStream.toByteArray();
+
+            return byteArrayOutputStream.toByteArray(); 
         } catch (Exception e) {
-            System.out.println("Erreur lors du téléchargement du fichier : " + e.getMessage());
+            System.out.println("Erreur lors du téléchargement du fichier : " + e.getClass());
             return null;    
         }
     }
@@ -126,11 +146,6 @@ public class Downloader {
                 }
                 index+=bytesRead;
                 fragment = new byte[1024];
-            }
-            
-            // Si on n'a pas lu suffisamment de données, renvoyer une erreur
-            if (totalBytesRead < (end - start)) {
-                throw new IOException("Received less data than expected");
             }
                 
             return filePart;
