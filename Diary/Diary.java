@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 public class Diary extends UnicastRemoteObject implements DiaryRemote {
-    Map<String,List<Integer>> files;
-    Map<String,Long> files_sizes;
+    Map<String,List<ClientRepresentation>> files; // {nom_du_fichier : (IP1, port1),(IP2,port2)... ; ...}
+    Map<String,Long> files_sizes; // {nom_du_fichier : taille du fichier en octets}
 
     public Diary() throws RemoteException {
         super();
@@ -17,39 +17,43 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
     }
 
     @Override
-    public List<Integer> getClient(String file_name) {
-        for (Map.Entry<String, List<Integer>> entry : files.entrySet()) {
+    public List<ClientRepresentation> getClient(String file_name) {
+        for (Map.Entry<String,List<ClientRepresentation>> entry : files.entrySet()) {
             if (entry.getKey().equals(file_name)) {
                 return entry.getValue();
             }
         }
-        return new ArrayList<Integer>(); // Si vide
+        return new ArrayList<ClientRepresentation>(); // Si vide
     }
 
     public List<String> getAllFiles() throws RemoteException{
         return new ArrayList<String>(files.keySet());
     }
+    
     @Override
-    public List<String> getFiles(Integer client) throws RemoteException{
+    public List<String> getFiles(String IPClient, Integer port) throws RemoteException {
         List<String> clientFiles = new ArrayList<String>();
-        for (Map.Entry<String, List<Integer>> entry : files.entrySet()) {
-            if (entry.getValue().contains(client)) {
-                clientFiles.add(entry.getKey());
+        for (Map.Entry<String, List<ClientRepresentation>> entry : files.entrySet()) {
+            for (ClientRepresentation element : entry.getValue())
+                if (element.getAdresse() == IPClient && element.getPort() == port) {
+                    clientFiles.add(entry.getKey());
+                }
             }
-        }
         return clientFiles;
     }
     
     @Override 
-    public void addFiles(String fileName, Integer client, Long fileSize) throws RemoteException{
+    public void addFiles(String fileName, String IPClient, Integer port, Long fileSize) throws RemoteException{
         if (files.containsKey(fileName)) {
-            if (!files.get(fileName).contains(client)){
-                files.get(fileName).add(client);
-            } 
+            for (ClientRepresentation element : this.files.get(fileName)){
+                if (element.getAdresse() == IPClient && element.getPort() == port) {
+                    files.get(fileName).add(new ClientRepresentation(IPClient, port));
+                } 
+            }
             files_sizes.put(fileName, fileSize);
         } else {
-            List<Integer> clients = new ArrayList<Integer>();
-            clients.add(client);
+            List<ClientRepresentation> clients = new ArrayList<ClientRepresentation>();
+            clients.add(new ClientRepresentation(IPClient, port));
             files.put(fileName, clients);
             files_sizes.put(fileName,fileSize);
         }

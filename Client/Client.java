@@ -8,22 +8,28 @@ import java.rmi.registry.Registry;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.Serializable;
+import java.net.InetAddress;
 import java.util.Map;
 import java.util.Scanner;
 
 public class Client implements Runnable,Serializable {
     private int id;
+    private String ip;
     private DiaryRemote diary; // Référence RMI vers le Diary
     private Deamon deamon;
     private Downloader downloader;
+    private String diary_ip;
 
-    public Client(int id) {
+    public Client(int id, String diary_ip) {
         this.id = id;
+        this.diary_ip = diary_ip;
+        this.ip = getIp();
         try {
             this.deamon = new Deamon(this);
             this.downloader = new Downloader(this);
+
             // Connexion au Diary via RMI
-            Registry reg = LocateRegistry.getRegistry("localhost",1099);
+            Registry reg = LocateRegistry.getRegistry(this.diary_ip, 1099);
             this.diary = (DiaryRemote) reg.lookup("DiaryService");
 
         } catch (Exception e) {
@@ -31,16 +37,32 @@ public class Client implements Runnable,Serializable {
         }
     }
 
+    public String getIp() {
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+
+        } catch (Exception e) {
+            System.out.println("Erreur dans la récupération de l'ip");
+            return "";
+        }
+
+    }
+
+    public String getDiaryIp() {
+        return this.diary_ip;
+    }
+
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.out.println("Usage: java Client <id>");
+            System.out.println("Usage: java Client <id> <ip du Diary>");
             System.exit(1);
         }
 
         int id = Integer.parseInt(args[0]);
+        String diary_ip = args[1];
 
         // Lancer le client avec l'id et les fichiers
-        Client client = new Client(id);
+        Client client = new Client(id, diary_ip);
         new Thread(client).start();
     }
 
@@ -127,7 +149,7 @@ public class Client implements Runnable,Serializable {
             File file = new File(filePath);
             if (file.exists()) {
                 try {
-                    this.diary.addFiles(file.getName(), this.deamon.getPort(), file.length());
+                    this.diary.addFiles(file.getName(), this.ip, this.deamon.getPort(), file.length());
                     this.deamon.addFile(file);
                 } catch(Exception e) {
                     System.out.println("Erreur lors de la récupération du nombre de ligne d'une fichier avec le demon : " + e.getMessage());
@@ -165,7 +187,7 @@ public class Client implements Runnable,Serializable {
     public void reloadFiles() {
         for (Map.Entry<String,File> entry: deamon.files.entrySet()) {
             try { 
-                diary.addFiles(entry.getValue().getName(),this.deamon.getPort(), entry.getValue().length());
+                diary.addFiles(entry.getValue().getName(),this.getIp(),this.deamon.getPort(), entry.getValue().length());
             } catch (Exception e) {
                 System.out.println("Erreur dans le rechargement des fichiers" + e);
             }

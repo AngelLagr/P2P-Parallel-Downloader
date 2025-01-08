@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import Client.Client;
+import Diary.ClientRepresentation;
 import Diary.DiaryRemote;
 
 public class Downloader {
@@ -42,13 +43,11 @@ public class Downloader {
 
     public byte[] download(String file_name) throws RemoteException {
         try {
-            long startTime = System.currentTimeMillis();
-
             // Connecter au service RMI pour récupérer des informations sur le fichier
             Registry reg = LocateRegistry.getRegistry("localhost",1099);
             DiaryRemote diary = (DiaryRemote) reg.lookup("DiaryService");        
 
-            List<Integer> clients_related = diary.getClient(file_name);
+            List<ClientRepresentation> clients_related = diary.getClient(file_name);
             int nb_clients = clients_related.size();
             if (nb_clients == 0) {
                 throw new Exception("Aucun client ne possède ce fichier");
@@ -70,6 +69,8 @@ public class Downloader {
             List<Slave> slaves = new ArrayList<Slave>();
 
             
+            long startTime = System.currentTimeMillis();
+
             for (int i = 0; i < clients_related.size(); i++) {
                 Slave slave = new Slave(clients_related.get(i), partitions.get(i), startIndex, file_name,fileParts, this, i);
                 fileParts.add(null);
@@ -97,9 +98,9 @@ public class Downloader {
     }
 
 
-	public byte[] fetchFilePartFromDaemon(Integer client, String fileName, Long start, Long end) throws IOException {
+	public byte[] fetchFilePartFromDaemon(ClientRepresentation client, String fileName, Long start, Long end) throws IOException {
         System.out.println("Attempting to connect to daemon on port: " + client);
-        try (Socket daemonSocket = new Socket("localhost", client)) {
+        try (Socket daemonSocket = new Socket( client.getAdresse(), client.getPort())) {
             InputStream daemonIn = daemonSocket.getInputStream();
             OutputStream daemonOut = daemonSocket.getOutputStream();
 
@@ -111,7 +112,7 @@ public class Downloader {
             
 
             // Lire le fichier en morceaux
-            byte[] fragment = new byte[1024]; // Taille plus petite
+            byte[] fragment = new byte[1024];
             int totalBytesRead = 0;
             int bytesRead;
             byte[] filePart = new byte[(int)(end-start)]; 
@@ -142,7 +143,7 @@ public class Downloader {
 }
 
 class Slave extends Thread {
-    Integer client;
+    ClientRepresentation client;
     Long partitionSize;
     int startIndex;
     String file_name;
@@ -150,7 +151,7 @@ class Slave extends Thread {
     Downloader downloader;
     Integer index_client;
 
-    public Slave (Integer client, Long partitionSize, int startIndex, String file_name, List<byte[]> fileParts, Downloader downloader, Integer index_client) {
+    public Slave (ClientRepresentation client, Long partitionSize, int startIndex, String file_name, List<byte[]> fileParts, Downloader downloader, Integer index_client) {
         this.client =client;
         this.partitionSize = partitionSize;
         this.startIndex = startIndex;
