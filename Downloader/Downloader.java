@@ -11,6 +11,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.zip.GZIPInputStream;
 
 import Client.Client;
@@ -59,7 +60,7 @@ public class Downloader {
         }
     }
 
-    public byte[] download(String file_name) throws RemoteException {
+    public byte[] download(String file_name) throws RemoteException, ExceptionFichierVide, ExceptionPlusDeClient {
         try {
             // Connecter au service RMI pour récupérer des informations sur le fichier
             Registry reg = LocateRegistry.getRegistry(this.client.getDiaryIp(),1099);
@@ -77,20 +78,23 @@ public class Downloader {
                 throw new Exception("Fichier non trouvé");
             } else if (file_size == -2) {
                 throw new Exception("Aucun client trouvé possedant ce fichier");
+            } else if (file_size == 0) {
+                throw new ExceptionFichierVide("Fichier vide");
             }
 
             // Partitionner le fichier entre les clients
             List<Long> partitions = partition(file_size, nb_clients);
             // Récupérer les parties du fichier depuis chaque daemon
             List<byte[]> fileParts = new ArrayList<>();
-            int startIndex = 0;
+            List<Integer> clientsIndex = new ArrayList<>();
             List<Slave> slaves = new ArrayList<Slave>();
 
-            
+            int startIndex = 0;
             long startTime = System.currentTimeMillis();
 
             for (int i = 0; i < clients_related.size(); i++) {
                 Slave slave = new Slave(clients_related.get(i), partitions.get(i), startIndex, file_name,fileParts, this, i);
+                clientsIndex.add(startIndex);
                 fileParts.add(null);
                 slave.start();
 
@@ -105,12 +109,48 @@ public class Downloader {
             
             // Décompresser chaque partie avant de les assembler
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            for (byte[] compressedPart : fileParts) {
-                byte[] decompressedPart = decompressFilePart(compressedPart);
-                byteArrayOutputStream.write(decompressedPart);
-            }
 
+            int index = 0;
+            while (index < fileParts.size()) {
+                byte[] compressedPart = fileParts.get(index);
+                try {
+                    System.out.println(compressedPart.length);
+                    byte[] decompressedPart = decompressFilePart(compressedPart);
+                    
+                    index++;
+                    byteArrayOutputStream.write(decompressedPart);
+                } catch (OutOfMemoryError e) {
+                    System.out.println("Un des clients possedant le fichier s'est déconnecté !");
+                    //On enleve le client déconnecté des clients possibles
+                    System.out.println(byteArrayOutputStream.size());
+                    System.gc();
+                    fileParts.set(index, null);
+                    
+                    diary.removeClients(clients_related.get(index));
+                    clients_related.remove(index);
+                    if (clients_related.size()==0) {
+                        throw new ExceptionPlusDeClient();
+                    }
+
+                    
+                    
+                    System.out.println("Recherche d'un nouveaux client...");
+                    //On choisi un nouveaux clients et on lui fait une nouvelle demande
+                    
+                    Random r = new Random();
+                    ClientRepresentation new_client = clients_related.get(r.nextInt(clients_related.size()));
+                    Slave slave = new Slave(new_client, partitions.get(index), clientsIndex.get(index), file_name,fileParts, this, index);
+                    slave.start();
+                    slave.join();
+                    System.out.println("Récupération des données réussie");
+
+                }
+            }
             return byteArrayOutputStream.toByteArray(); 
+        } catch (ExceptionFichierVide e) {
+            throw e;
+        } catch (ExceptionPlusDeClient e) {
+            throw e;
         } catch (Exception e) {
             System.out.println("Erreur lors du téléchargement du fichier : " + e.getClass());
             return null;    
@@ -129,9 +169,7 @@ public class Downloader {
             daemonOut.write(request.getBytes());
             daemonOut.flush();
             
-            
-
-            // Lire le fichier en morceaux
+            // Lire le fichier par morceaux
             byte[] fragment = new byte[1024];
             int totalBytesRead = 0;
             int bytesRead;

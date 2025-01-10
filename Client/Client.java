@@ -2,6 +2,8 @@ package Client;
 
 import Diary.DiaryRemote;
 import Downloader.Downloader;
+import Downloader.ExceptionFichierVide;
+import Downloader.ExceptionPlusDeClient;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -9,7 +11,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
-import java.util.Map;
 import java.util.Scanner;
 
 public class Client implements Runnable,Serializable {
@@ -19,11 +20,13 @@ public class Client implements Runnable,Serializable {
     private Deamon deamon;
     private Downloader downloader;
     private String diary_ip;
+    public Integer delay;
 
-    public Client(int id, String diary_ip) {
+    public Client(int id, String diary_ip, Integer delay) {
         this.id = id;
         this.diary_ip = diary_ip;
         this.ip = getIp();
+        this.delay = delay;
         try {
             this.deamon = new Deamon(this);
             this.downloader = new Downloader(this);
@@ -54,15 +57,16 @@ public class Client implements Runnable,Serializable {
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.out.println("Usage: java Client <id> <ip du Diary>");
+            System.out.println("Usage: java Client <id> <delay> <ip du Diary>");
             System.exit(1);
         }
 
         int id = Integer.parseInt(args[0]);
-        String diary_ip = args[1];
+        int delay = Integer.parseInt(args[1]);
+        String diary_ip = args[2];
 
         // Lancer le client avec l'id et les fichiers
-        Client client = new Client(id, diary_ip);
+        Client client = new Client(id, diary_ip, delay);
         new Thread(client).start();
     }
 
@@ -77,7 +81,7 @@ public class Client implements Runnable,Serializable {
 
     public void run() {
         try (Scanner scanner = new Scanner(System.in)) {
-            System.out.println("Client démarré. Entrez une commande (getAnnuaire, getFichier <nom>, addFichier <chemin>, addDossier <chemin>, reload, exit) :");
+            System.out.println("Client démarré. Entrez une commande (getAnnuaire, getFichier <nom>, addFichier <chemin>, addDossier <chemin>, exit) :");
 
             while (true) {
                 System.out.print("> ");
@@ -97,8 +101,6 @@ public class Client implements Runnable,Serializable {
                 } else if (command.startsWith("addFichier")) {
                     String filePath = command.substring(11).trim();
                     addFichier(filePath);
-                } else if (command.startsWith("reload")) {
-                    reloadFiles();
                 } else if (command.startsWith("addDossier")) {
                     String filePath = command.substring(11).trim();
                     addDossier(filePath);
@@ -138,6 +140,25 @@ public class Client implements Runnable,Serializable {
             } catch (Exception e) {
                 System.out.println("Erreur lors de l'enregistrement du fichier : " + e.getClass());
             }
+        } catch (ExceptionPlusDeClient e) {
+            System.out.println("Le fichier n'est plus téléchargable sur le réseau, car plus aucun client ne le possède " + e.getClass());
+        } catch (ExceptionFichierVide e) {
+            try {
+                File file = new File("./downloads/" + file_name);
+                if (!file.exists()) {
+                    // Si le fichier n'existe pas, on le créer
+                    if (file.createNewFile()) {
+                        System.out.println("Fichier créé : " + file.getAbsolutePath());
+                    }
+                } else {
+                    // Si le fichier existe, le rendre vide
+                    try (FileOutputStream fos = new FileOutputStream(file)) {
+                        System.out.println("Fichier existant vidé : " + file.getAbsolutePath());
+                    }
+                }
+            } catch (Exception b) {
+                System.out.println("Erreur lors de la création du fichier : " + b.getClass());
+            }
         } catch (Exception e){
             System.out.println("Erreur de connexion lors du téléchargement : " + e.getClass());
         }
@@ -163,6 +184,7 @@ public class Client implements Runnable,Serializable {
         
     }
 
+
     private void addDossier(String filePath) {
         File dossier = new File(filePath);
         if (!dossier.exists()) {
@@ -183,16 +205,6 @@ public class Client implements Runnable,Serializable {
             System.out.println("Le chemin spécifié n'est pas un dossier valide.");
         }
     }
-
-    public void reloadFiles() {
-        for (Map.Entry<String,File> entry: deamon.files.entrySet()) {
-            try { 
-                diary.addFiles(entry.getValue().getName(),this.getIp(),this.deamon.getPort(), entry.getValue().length());
-            } catch (Exception e) {
-                System.out.println("Erreur dans le rechargement des fichiers" + e.getClass());
-            }
-        }
-    } 
 
     public void print(String texte) {
         System.out.println(texte);

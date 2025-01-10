@@ -9,6 +9,7 @@ import java.util.Map;
 public class Diary extends UnicastRemoteObject implements DiaryRemote {
     Map<String,List<ClientRepresentation>> files; // {nom_du_fichier : (IP1, port1),(IP2,port2)... ; ...}
     Map<String,Long> files_sizes; // {nom_du_fichier : taille du fichier en octets}
+    Map<String,Long> files_sizes_compressed; // {nom_du_fichier : taille du fichier en octets}
 
     public Diary() throws RemoteException {
         super();
@@ -70,6 +71,27 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
             return null;
         }
     }
+
+    @Override
+    public void removeClients(ClientRepresentation client) throws RemoteException{
+        List<String> keysToRemove = new ArrayList<>();
+        for (Map.Entry<String, List<ClientRepresentation>> entry : files.entrySet()) {
+            List<ClientRepresentation> clientList = entry.getValue();
+            if (clientList.contains(client)) {
+                if (clientList.size() == 1) {
+                    keysToRemove.add(entry.getKey());
+                } else {
+                    clientList.remove(client);
+                }
+            }
+        }
+
+        for (String key : keysToRemove) {
+            files.remove(key);
+        }
+    }
+
+    
     
     @Override
     public void removeFiles(String name_file) {

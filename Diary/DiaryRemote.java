@@ -11,4 +11,5 @@ public interface DiaryRemote extends Remote {
     void removeFiles(String name_file) throws RemoteException;
     List<String> getAllFiles()throws RemoteException;
     Long getFileSizeDiary(String fileName)throws RemoteException;
+    void removeClients(ClientRepresentation client) throws RemoteException;
 }

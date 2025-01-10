@@ -17,12 +17,14 @@ public class Deamon implements Serializable {
     Client client;
     Map<String, File> files;
     int port;
+    int delay;
 
     public Deamon(Client client) {
         this.client = client;
         this.files = new HashMap<String, File>();
         this.port = 8080 + client.getId();
         startClientServer();
+        this.delay = client.delay;
     }
 
     public int getPort(){
@@ -75,10 +77,12 @@ public class Deamon implements Serializable {
 class Slave extends Thread {
     Socket s1;
     Deamon deamon;
+    int delay;
 
     public Slave (Socket s, Deamon deamon) {
         this.s1 =s;
         this.deamon = deamon;
+        this.delay = deamon.delay;
     }
 
     public void run() {        
@@ -108,34 +112,24 @@ class Slave extends Thread {
                                 .getValue().getAbsolutePath();
                 byte[] compressedFilePart = this.deamon.getFilePart(filePath, start, end);
 
+                // Pour envoyer les données par paquet, on peut les découper en morceaux plus petits
+                int packetSize = 1024; // Taille des paquets, ajustez en fonction des besoins
+                int totalLength = compressedFilePart.length;
 
+                // Envoi par paquets avec délai simulé
+                for (int i = 0; i < totalLength; i += packetSize) {
+                    int length = Math.min(packetSize, totalLength - i);
+                    byte[] packet = new byte[length];
+                    System.arraycopy(compressedFilePart, i, packet, 0, length);
+
+                    // Envoi du paquet
+                    s1_out.write(packet);
+                    s1_out.flush();
+
+                    // Simuler un délai entre l'envoi de chaque paquet
+                    try{Thread.sleep(this.delay);}catch (Exception e) {} // Pause pour simuler la lenteur de la connexion
+                }
                 
-                // Simuler un retard dans l'envoi des paquets///////////////(Decommenter pour activer)///////////////////////////////////////
-                // int delayMs = 1; // délai en millisecondes entre chaque paquet (ajustez selon vos besoins)
-
-                // // Pour envoyer les données par paquet, on peut les découper en morceaux plus petits
-                // int packetSize = 1024; // Taille des paquets, ajustez en fonction des besoins
-                // int totalLength = compressedFilePart.length;
-
-                // // Envoi par paquets avec délai simulé
-                // for (int i = 0; i < totalLength; i += packetSize) {
-                //     int length = Math.min(packetSize, totalLength - i);
-                //     byte[] packet = new byte[length];
-                //     System.arraycopy(compressedFilePart, i, packet, 0, length);
-
-                //     // Envoi du paquet
-                //     s1_out.write(packet);
-                //     s1_out.flush();
-
-                //     // Simuler un délai entre l'envoi de chaque paquet
-                //     try{Thread.sleep(delayMs);}catch (Exception e) {} // Pause pour simuler la lenteur de la connexion
-                // }
-                ///////////////////////////////////////////////////////////////////////////////////////////////////
-                
-                // Envoyer la réponse au downloader (a decommenter en cas de non simulation de lentaire)
-                s1_out.write(compressedFilePart);
-                s1_out.flush();
-
                 // Fermer la connexion
                 s1.close();
             } else {
