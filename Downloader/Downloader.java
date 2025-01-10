@@ -114,15 +114,14 @@ public class Downloader {
             while (index < fileParts.size()) {
                 byte[] compressedPart = fileParts.get(index);
                 try {
-                    System.out.println(compressedPart.length);
                     byte[] decompressedPart = decompressFilePart(compressedPart);
                     
                     index++;
                     byteArrayOutputStream.write(decompressedPart);
                 } catch (OutOfMemoryError e) {
                     System.out.println("Un des clients possedant le fichier s'est déconnecté !");
+                    
                     //On enleve le client déconnecté des clients possibles
-                    System.out.println(byteArrayOutputStream.size());
                     System.gc();
                     fileParts.set(index, null);
                     
