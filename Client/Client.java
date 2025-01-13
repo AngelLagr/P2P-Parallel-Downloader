@@ -114,7 +114,7 @@ public class Client implements Runnable,Serializable {
     /**
      * Affiche l'annuaire des fichiers disponibles.
      */
-    private void showAnnuaire() {
+    public void showAnnuaire() {
         try {
             System.out.println("Fichiers disponibles dans le Diary :");
             for (String file : diary.getAllFiles()) {
@@ -125,11 +125,14 @@ public class Client implements Runnable,Serializable {
         }
     }
 
-    private void getFichier(String command) {
+    public void getFichier(String command) {
+        long startTime = System.currentTimeMillis();
+        long endTime = System.currentTimeMillis();
         String file_name = command.substring(11).trim();
 
         byte[] completeFile;
         try {
+            
             completeFile = downloader.download(file_name);
             
             // Créer un fichier local et y écrire le contenu téléchargé
@@ -140,6 +143,7 @@ public class Client implements Runnable,Serializable {
             } catch (Exception e) {
                 System.out.println("Erreur lors de l'enregistrement du fichier : " + e.getClass());
             }
+            endTime = System.currentTimeMillis();
         } catch (ExceptionPlusDeClient e) {
             System.out.println("Le fichier n'est plus téléchargable sur le réseau, car plus aucun client ne le possède " + e.getClass());
         } catch (ExceptionFichierVide e) {
@@ -156,16 +160,21 @@ public class Client implements Runnable,Serializable {
                         System.out.println("Fichier existant vidé : " + file.getAbsolutePath());
                     }
                 }
+                endTime = System.currentTimeMillis();
             } catch (Exception b) {
+                endTime = System.currentTimeMillis();
                 System.out.println("Erreur lors de la création du fichier : " + b.getClass());
             }
         } catch (Exception e){
+            endTime = System.currentTimeMillis();
             System.out.println("Erreur de connexion lors du téléchargement : " + e.getClass());
         }
+        System.out.println("\nDurée du téléchargement complet : " + (endTime-startTime) +"ms");
+
     }
 
     // Cette methode permet au client de notifier qu'il possède un fichier
-    private void addFichier(String filePath) {
+    public void addFichier(String filePath) {
         try {
             File file = new File(filePath);
             if (file.exists()) {
@@ -185,7 +194,7 @@ public class Client implements Runnable,Serializable {
     }
 
 
-    private void addDossier(String filePath) {
+    public void addDossier(String filePath) {
         File dossier = new File(filePath);
         if (!dossier.exists()) {
             System.out.println("Il n'y a pas de dossier ou de fichier au chemin : " + filePath);
@@ -208,6 +217,10 @@ public class Client implements Runnable,Serializable {
 
     public void print(String texte) {
         System.out.println(texte);
+    }
+
+    public DiaryRemote getDiary() {
+        return this.diary;
     }
 }
 

@@ -15,7 +15,7 @@ public class ClientUI {
 
     private void initializeUI() {
         // Créer la fenêtre principale
-        JFrame frame = new JFrame("Client Interface");
+        JFrame frame = new JFrame("Client " + this.client.getId() + " Interface");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(600, 400);
 
@@ -38,7 +38,7 @@ public class ClientUI {
         annuaireButton.addActionListener(e -> {
             try {
                 textArea.append("Fichiers disponibles dans le Diary:\n");
-                for (String file : this.client.diary.getAllFiles()) {
+                for (String file : this.client.getDiary().getAllFiles()) {
                     textArea.append("- " + file + "\n");
                 }
             } catch (Exception ex) {
@@ -51,7 +51,7 @@ public class ClientUI {
         getFileButton.addActionListener(e -> {
             try {
                 // Récupérer la liste des fichiers disponibles dans le Diary
-                String[] files = this.client.diary.getAllFiles().toArray(new String[0]);;
+                String[] files = this.client.getDiary().getAllFiles().toArray(new String[0]);;
                 
                 // Créer une boîte de dialogue avec une liste déroulante des fichiers
                 String fileName = (String) JOptionPane.showInputDialog(
@@ -125,15 +125,16 @@ public class ClientUI {
     }
 
     public static void main(String[] args) {
-        if (args.length < 2) {
-            System.out.println("Usage: java ClientUI <id> <ip du Diary>");
+        if (args.length < 3) {
+            System.out.println("Usage: java ClientUI <id> <ip du Diary> <delay>");
             System.exit(1);
         }
 
         int id = Integer.parseInt(args[0]);
         String diaryIp = args[1];
+        int delay = Integer.parseInt(args[2]);
 
-        Client client = new Client(id, diaryIp);
+        Client client = new Client(id, diaryIp, delay);
         SwingUtilities.invokeLater(() -> new ClientUI(client));
     }
 }
