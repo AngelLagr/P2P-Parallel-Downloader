@@ -39,7 +39,7 @@ public class ClientUI {
             try {
                 textArea.append("Fichiers disponibles dans le Diary:\n");
                 for (String file : this.client.getDiary().getAllFiles()) {
-                    textArea.append("- " + file + "\n");
+                    textArea.append("- " + file + " de taille " + this.client.getDiary().getFileSizeDiary(file) + " détenu par : "+ this.client.getDiary().getClient(file));
                 }
             } catch (Exception ex) {
                 textArea.append("Erreur lors de la récupération de l'annuaire : " + ex.getMessage() + "\n");
