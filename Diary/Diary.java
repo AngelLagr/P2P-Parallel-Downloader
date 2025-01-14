@@ -48,7 +48,7 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
         if (files.containsKey(fileName)) {
             Boolean isInside = false;
             for (ClientRepresentation element : this.files.get(fileName)){
-                if (element.getAdresse() == IPClient && element.getPort() == port) {
+                if (element.getAdresse().equals(IPClient) && element.getPort().equals(port)) {
                     isInside = true;
                 } 
             }
