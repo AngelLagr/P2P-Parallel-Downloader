@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Iterator;
 
 public class Diary extends UnicastRemoteObject implements DiaryRemote {
     Map<String,List<ClientRepresentation>> files; // {nom_du_fichier : (IP1, port1),(IP2,port2)... ; ...}
@@ -73,19 +74,30 @@ public class Diary extends UnicastRemoteObject implements DiaryRemote {
     }
 
     @Override
-    public void removeClients(ClientRepresentation client) throws RemoteException{
+    public void removeClients(ClientRepresentation client) throws RemoteException {
         List<String> keysToRemove = new ArrayList<>();
+        
+        // Parcours de toutes les entrées dans 'files'
         for (Map.Entry<String, List<ClientRepresentation>> entry : files.entrySet()) {
             List<ClientRepresentation> clientList = entry.getValue();
-            if (clientList.contains(client)) {
-                if (clientList.size() == 1) {
-                    keysToRemove.add(entry.getKey());
-                } else {
-                    clientList.remove(client);
+            
+            // Utilisation d'un itérateur pour éviter ConcurrentModificationException
+            Iterator<ClientRepresentation> iterator = clientList.iterator();
+            while (iterator.hasNext()) {
+                ClientRepresentation c = iterator.next();
+                if (c.equals(client)) {
+                    iterator.remove(); // Suppression de l'élément directement via l'itérateur
+                    
+                    // Si la liste devient vide après suppression, on marque la clé pour suppression
+                    if (clientList.isEmpty()) {
+                        keysToRemove.add(entry.getKey());
+                    }
+                    break; // On arrête une fois que le client est supprimé (pas besoin de continuer dans cette liste)
                 }
             }
         }
 
+        // Suppression des entrées dans 'files' pour lesquelles la liste est vide
         for (String key : keysToRemove) {
             files.remove(key);
         }

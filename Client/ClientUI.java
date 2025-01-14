@@ -4,6 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import Diary.ClientRepresentation;
+import java.rmi.RemoteException;
+
 
 public class ClientUI {
     private Client client;
@@ -115,7 +118,15 @@ public class ClientUI {
 
         // Bouton pour quitter
         JButton exitButton = new JButton("Quitter");
-        exitButton.addActionListener(e -> System.exit(0));
+        exitButton.addActionListener(e -> {
+            try {
+                this.client.getDiary().removeClients(new ClientRepresentation(this.client.getIp(), this.client.getDeamon().getPort()));
+            } catch (Exception f) {
+                System.out.println("Le client n'a pas pu être retiré du diary");
+            }
+            
+            System.exit(0);
+        });
         buttonPanel.add(exitButton);
 
         panel.add(buttonPanel, BorderLayout.SOUTH);

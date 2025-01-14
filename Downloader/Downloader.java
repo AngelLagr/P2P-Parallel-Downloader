@@ -118,7 +118,7 @@ public class Downloader {
                     
                     index++;
                     byteArrayOutputStream.write(decompressedPart);
-                } catch (OutOfMemoryError e) {
+                } catch (OutOfMemoryError | Exception e) {
                     System.out.println("Un des clients possedant le fichier s'est déconnecté !");
                     
                     //On enleve le client déconnecté des clients possibles
