@@ -2,86 +2,87 @@
 
 ## Description
 
-Ce projet est une preuve de concept (PoC) développée en Java pour démontrer la parallélisation, la compression de données, et la gestion des déconnexions dans un téléchargeur peer-to-peer. L'objectif est de permettre le partage de fichiers entre machines sans serveur centralisé, tout en simulant des conditions de réseau réalistes comme des connexions lentes.
+This project is a proof of concept (PoC) developed in Java to demonstrate parallelization, data compression, and disconnection handling in a peer-to-peer downloader. The goal is to enable file sharing between machines without a central server while simulating realistic network conditions, such as slow connections.
 
-## Fonctionnalités
+## Features
 
-- **Téléchargement parallèle** : Les fichiers sont divisés en segments, téléchargés simultanément pour améliorer les performances.
-- **Compression des données** : Réduit la taille des fichiers transférés pour optimiser les échanges.
-- **Gestion des déconnexions** : Si un peer se déconnecte pendant un téléchargement, le système redistribue les segments manquants aux autres peers actifs.
+- **Parallel Downloading**: Files are divided into segments and downloaded simultaneously to improve performance.
+- **Data Compression**: Reduces the size of transferred files to optimize exchanges.
+- **Disconnection Handling**: If a peer disconnects during a download, the system redistributes the missing segments to other active peers.
 
-## Structure du projet
+## Project Structure
 
-- `Client/` : Code source pour les machines clients qui effectuent les téléchargements.
-- `Downloader/` : Composants responsables de la gestion des téléchargements et des segments.
-- `Diary/` : Serveur centralisé jouant le rôle de coordinateur et gestionnaire des peers.
-- `downloads/` : Répertoire pour stocker les fichiers téléchargés.
-- `Rapport_Intergiciel.pdf` : Rapport détaillant le fonctionnement et les objectifs du projet.
+- `Client/`: Source code for client machines performing downloads.
+- `Downloader/`: Components responsible for managing downloads and segments.
+- `Diary/`: Central server acting as a coordinator and peer manager.
+- `downloads/`: Directory to store downloaded files.
+- `Rapport_Intergiciel.pdf`: Report detailing the project's functionality and objectives.
 
 ## Installation
 
-1. **Cloner le dépôt** :
+1. **Clone the repository**:
 
    ```bash
    git clone https://github.com/AngelLagr/PeerToPeerProject.git
+   ```
 
-2. **Compiler les sources** :
+2. **Compile the source files**:
 
    ```bash
    javac */*.java
    ```
 
-## Utilisation
+## Usage
 
-### Lancer le serveur (Diary)
+### Starting the Server (Diary)
 
-Le serveur Diary coordonne les interactions entre les clients. Lancez-le sur une machine avec la commande suivante :
+The Diary server coordinates interactions between clients. Start it on a machine with the following command:
 
 ```bash
 java Diary.DiaryServer
 ```
 
-### Lancer les clients
+### Starting the Clients
 
-Sur les machines clientes, exécutez la commande suivante pour démarrer le client peer-to-peer :
+On client machines, run the following command to start the peer-to-peer client:
 
 ```bash
-java Client.Client <identifiant> <IP_du_Diary> <delai>
+java Client.Client <identifier> <Diary_IP> <delay>
 ```
 
-- **`identifiant`** : Un identifiant unique pour chaque client.
-- **`IP_du_Diary`** : L'adresse IP ou le nom d'hôte du serveur Diary.
-- **`delai`** : Temps en millisecondes pour simuler une connexion lente. Ce délai est ajouté à chaque envoi de paquet.
+- **`identifier`**: A unique identifier for each client.
+- **`Diary_IP`**: The IP address or hostname of the Diary server.
+- **`delay`**: Time in milliseconds to simulate a slow connection. This delay is added to every packet sent.
 
-### Exemple d'exécution
+### Execution Example
 
-1. Lancez le serveur Diary :
+1. Start the Diary server:
 
    ```bash
    java Diary.DiaryServer
    ```
 
-2. Lancez deux clients sur des machines différentes :
+2. Start two clients on different machines:
 
    ```bash
    java Client.Client client1 192.168.1.10 100
    java Client.Client client2 192.168.1.10 200
    ```
 
-Dans cet exemple :
-- `client1` communique avec un délai de 100ms par paquet.
-- `client2` communique avec un délai de 200ms par paquet.
+In this example:
+- `client1` communicates with a delay of 100ms per packet.
+- `client2` communicates with a delay of 200ms per packet.
 
-## Points techniques clés
+## Key Technical Points
 
-1. **Parallélisation** : Chaque fichier est segmenté en parties indépendantes. Les segments sont téléchargés en parallèle depuis différents peers, optimisant ainsi les performances.
-2. **Compression des données** : Avant l'envoi, les segments sont compressés pour minimiser la bande passante utilisée.
-3. **Gestion des déconnexions** : Si un peer se déconnecte avant d'avoir fini de partager ses segments, les autres clients reprennent automatiquement les téléchargements manquants.
+1. **Parallelization**: Each file is segmented into independent parts. Segments are downloaded in parallel from different peers, optimizing performance.
+2. **Data Compression**: Segments are compressed before transmission to minimize bandwidth usage.
+3. **Disconnection Handling**: If a peer disconnects before completing its share, other clients automatically resume the missing downloads.
 
-## Remarque
+## Note
 
-Le poc ne fonctionne que dans un même réseau et ne peux pas permettre le téléchargement avec des machines hors réseau.
+This PoC only works within the same network and does not support downloads across machines outside the network.
 
-## Licence
+## License
 
-Ce projet est sous licence MIT. Consultez le fichier `LICENSE` pour plus d'informations.
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
