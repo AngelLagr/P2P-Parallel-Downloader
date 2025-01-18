@@ -24,16 +24,11 @@ Ce projet est une preuve de concept (PoC) développée en Java pour démontrer l
 
    ```bash
    git clone https://github.com/AngelLagr/PeerToPeerProject.git
-   ```
 
-2. **Configurer l'environnement Java** :
-   - Assurez-vous d'avoir une version récente du JDK installée.
-   - Configurez correctement votre IDE ou environnement de compilation.
-
-3. **Compiler les sources** :
+2. **Compiler les sources** :
 
    ```bash
-   javac Diary/DiaryServer.java Client/Client.java
+   javac */*.java
    ```
 
 ## Utilisation
@@ -82,6 +77,10 @@ Dans cet exemple :
 1. **Parallélisation** : Chaque fichier est segmenté en parties indépendantes. Les segments sont téléchargés en parallèle depuis différents peers, optimisant ainsi les performances.
 2. **Compression des données** : Avant l'envoi, les segments sont compressés pour minimiser la bande passante utilisée.
 3. **Gestion des déconnexions** : Si un peer se déconnecte avant d'avoir fini de partager ses segments, les autres clients reprennent automatiquement les téléchargements manquants.
+
+## Remarque
+
+Le poc ne fonctionne que dans un même réseau et ne peux pas permettre le téléchargement avec des machines hors réseau.
 
 ## Licence
 
