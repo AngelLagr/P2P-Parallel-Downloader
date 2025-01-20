@@ -16,7 +16,7 @@ This project is a proof of concept (PoC) developed in Java to demonstrate parall
 - `Downloader/`: Components responsible for managing downloads and segments.
 - `Diary/`: Central server acting as a coordinator and peer manager.
 - `downloads/`: Directory to store downloaded files.
-- `Rapport_Intergiciel.pdf`: Report detailing the project's functionality and objectives.
+- `Rapport_Intergiciel.pdf`: A french report detailing the project's functionality and objectives.
 
 ## Installation
 
