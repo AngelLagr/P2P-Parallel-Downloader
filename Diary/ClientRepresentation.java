@@ -10,6 +10,10 @@ public class ClientRepresentation implements Serializable{
         this.port = port;
     }
 
+    public boolean equals(ClientRepresentation client) {
+        return (this.adresse.equals(client.adresse) && this.port.equals(client.port));
+    }
+
     public String getAdresse() {
         return this.adresse;
     }
