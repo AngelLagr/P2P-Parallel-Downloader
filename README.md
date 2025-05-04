@@ -1,4 +1,4 @@
-# PeerToPeerProject
+# P2P-Parallel-Downloader
 
 ## Description
 
